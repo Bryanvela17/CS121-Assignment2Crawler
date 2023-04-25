@@ -1,5 +1,6 @@
 import re
 from urllib.parse import urlparse
+from bs4 import BeautifulSoup       ## This is a library for web crawling html or xlm documents
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
@@ -15,6 +16,11 @@ def extract_next_links(url, resp):
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
+    listOfLinks = []
+    print(f'\t\tURL Name ---> : {url}\t\t')     # Should print the url names so that we can see what's going on and to help debug
+    if (300 > resp.status >= 200)       # Checks to see if the status code is valid https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
+        if resp.raw_response is not None:
+            
     return list()
 
 ALLOWED_URLS = [r'^.+\.ics\.uci\.edu(/.*)?$',
@@ -31,8 +37,7 @@ def is_valid(url):
         parsed = urlparse(url)
         if parsed is None:          # If parsed object is empty, exit and return false
             return False 
-        # These are the only allowed URLS (domains)
-        if parsed.scheme not in set(["http", "https"]):
+        if parsed.scheme not in set(["http", "https"]): # These are the only allowed URLS (domains)
             return False
         if not any(regex.match(parsed.netloc) for regex in ALLOWED_URL_REGEXES): # This returns false for a incompatibe url 
             return False
