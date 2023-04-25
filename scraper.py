@@ -18,13 +18,21 @@ def extract_next_links(url, resp):
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
 
 
-    listOfLinks = []
+    listOfLinks = []    # This is where the list of hyperlinks will go 
+    listOfLinkText = [] # Empty string needed for adding all the words in each url
+
     print(f'\t\tURL Name ---> : {url}\t\t')     # Should print the url names so that we can see what's going on and to help debug
-    if (300 > resp.status >= 200)       # Checks to see if the status code is valid https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
+
+    if (300 > resp.status >= 200):       # Checks to see if the status code is valid https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
         if resp.raw_response is not None:
-        # TODO: Need to then proceed to parse the url  
+            soup = BeautifulSoup(resp.raw_response.content, 'lxml') # Creating a soup object to begin breaking down the url
+            listOfLinkText = soup.get_text()                        # Gets all the legit text from the website 
+            listOfLinkText = listOfLinkText.strip().split()         # Removes whitespace, and splits into a list of words
+    print(f'\t\tURL Text ---> : {listOfLinkText}\t\t')              # Prints all valid text which can later be used to tuple url with wordset https://www.crummy.com/software/BeautifulSoup/bs4/doc/#get-text 
+
+    # TODO: Begin to parse for urls contained in each url (inception) and make sure they are valid_urls() 
             
-    return list()
+    return listOfLinks
 
 ALLOWED_URLS = [r'^.+\.ics\.uci\.edu(/.*)?$',
                 r'^.+\.cs\.uci\.edu(/.*)?$',
