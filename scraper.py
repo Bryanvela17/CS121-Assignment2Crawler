@@ -16,17 +16,20 @@ def extract_next_links(url, resp):
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
+
+
     listOfLinks = []
     print(f'\t\tURL Name ---> : {url}\t\t')     # Should print the url names so that we can see what's going on and to help debug
     if (300 > resp.status >= 200)       # Checks to see if the status code is valid https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
         if resp.raw_response is not None:
+        # TODO: Need to then proceed to parse the url  
             
     return list()
 
 ALLOWED_URLS = [r'^.+\.ics\.uci\.edu(/.*)?$',
                 r'^.+\.cs\.uci\.edu(/.*)?$',
                 r'^.+\.informatics\.uci\.edu(/.*)?$',
-                r'^.+\.stat\.uci\.edu(/.*)?$']
+                r'^.+\.stat\.uci\.edu(/.*)?$'] 
 ALLOWED_URL_REGEXES = [re.compile(regex) for regex in ALLOWED_URLS]
 
 def is_valid(url):
