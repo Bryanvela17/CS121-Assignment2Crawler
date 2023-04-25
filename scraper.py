@@ -17,19 +17,30 @@ def extract_next_links(url, resp):
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
     return list()
 
+ALLOWED_URLS = [r'^.+\.ics\.uci\.edu(/.*)?$',
+                r'^.+\.cs\.uci\.edu(/.*)?$',
+                r'^.+\.informatics\.uci\.edu(/.*)?$',
+                r'^.+\.stat\.uci\.edu(/.*)?$']
+ALLOWED_URL_REGEXES = [re.compile(regex) for regex in ALLOWED_URLS]
+
 def is_valid(url):
     # Decide whether to crawl this url or not. 
     # If you decide to crawl it, return True; otherwise return False.
     # There are already some conditions that return False.
     try:
         parsed = urlparse(url)
+        if parsed is None:          # If parsed object is empty, exit and return false
+            return False 
+        # These are the only allowed URLS (domains)
         if parsed.scheme not in set(["http", "https"]):
             return False
+        if not any(regex.match(parsed.netloc) for regex in ALLOWED_URL_REGEXES): # This returns false for a incompatibe url 
+            return False
         return not re.match(
-            r".*\.(css|js|bmp|gif|jpe?g|ico"
+            r".*\.(css|js|bmp|gif|jpe?g|jpeg|jpg|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
             + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
-            + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
+            + r"|ps|eps|tex|ppt|pptx|ppsx|ps|doc|docx|xls|xlsx|names"
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
