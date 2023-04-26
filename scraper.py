@@ -155,3 +155,12 @@ def checkRobotFile(url):
     except Exception:
         return True
     return rp.can_fetch("*", url)
+
+def count_unique_pages(words_In_Page):
+    uni_Links = set()
+    for Link in words_In_Page.values(): # go through the links in the words_In_Page dict
+        #makes a new link without the fragment
+        parse_Link = urlparse(Link)
+        uni_Link = parse_Link.scheme + "://" + parse_Link.netloc + parse_Link.path
+        uni_Links.add(uni_Link) #puts the new link in the set of unique links
+    return len(uni_Links)
