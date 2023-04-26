@@ -128,8 +128,8 @@ def all_Count(listofLinkText, counter) -> int:
     return counter
 
 def getAllUrls(listOfLinks) -> list:
-    for everyLink in soup.findAll('a')
-        listOfLinks.append(everyLink.get('href'))
+    for everyLink in soup.findAll('a')              # Extract all the urls found within a page using 'a' tag
+        listOfLinks.append(everyLink.get('href'))   # Uses the href tag to get the urls 
     return listOfLinks
 
 def convertToAbsolute(url, urlList) -> list[str]:
@@ -147,16 +147,16 @@ def convertToAbsolute(url, urlList) -> list[str]:
     completeUrls = list(set(completeUrls))
     return completeUrls
 
-def checkRobotFile(url):
-    rp = RobotFileParser()
-    rp.set_url(urljoin(url, "/robots.txt"))
+def checkRobotFile(url) -> bool:
+    rp = RobotFileParser()                  # Creates a robotFileParser object
+    rp.set_url(urljoin(url, "/robots.txt")) # Creates a temporary url with the /robots.txt appened to the end
     try:
-        rp.read()
-    except Exception:
-        return True
-    return rp.can_fetch("*", url)
+        rp.read()                           # Read the file
+    except Exception:                       # If no robots.txt file, go ahead and crawl anyway
+        return True                     
+    return rp.can_fetch("*", url)           # If we are allowed to crawl return true, else false
 
-def count_unique_pages(words_In_Page):
+def count_unique_pages(words_In_Page) -> int:
     uni_Links = set()
     for Link in words_In_Page.values(): # go through the links in the words_In_Page dict
         #makes a new link without the fragment
@@ -164,3 +164,33 @@ def count_unique_pages(words_In_Page):
         uni_Link = parse_Link.scheme + "://" + parse_Link.netloc + parse_Link.path
         uni_Links.add(uni_Link) #puts the new link in the set of unique links
     return len(uni_Links)
+
+def longest_page_words(words_In_Page) -> int:
+    numberOfWords = max(words_In_Pagekeys())
+    return numberOfWords
+
+def longest_page(numberOfWords, words_In_Page) -> str:
+    longestPage = words_In_Page[numberOfWords]
+    return longestPage
+
+def most_common_words(count_Words):
+    sortedList = sorted(count_Words.items(), key=lambda x: x[1], reverse=True)
+    mostCommon = [entry[0] for entry in sort_by_frequency[:50]]
+    return mostCommon
+    
+def getSubDomains(words_In_Page):
+    subdomain_counts = defaultdict(int)
+    subdomain_pages = defaultdict(set)
+
+    for url in words_in_page.values():
+        parsed_url = urlparse(url)
+        if parsed_url.netloc.endswith('.ics.uci.edu'):
+            subdomain = parsed_url.netloc.split(".")[0]
+            subdomain_counts[subdomain] += 1
+            subdomain_pages[subdomain].add(url)
+
+    # Sort the subdomains by the number of unique pages in descending order
+    sorted_subdomains = sorted(subdomain_counts.items(), key=lambda x: (x[0].lower(), x[1]), reverse=False)
+    
+    # Return a list of tuples with the URL and count for each subdomain
+    return [(f'http://{subdomain}.ics.uci.edu', len(subdomain_pages[subdomain])) for subdomain, _ in sorted_subdomains]
