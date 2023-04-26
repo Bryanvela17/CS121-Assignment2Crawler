@@ -1,9 +1,10 @@
 import re
-from urllib.parse import urlparse, urldefrag
+from urllib.parse import urlparse, urldefrag, urljoin
 from bs4 import BeautifulSoup  ## This is a library for web crawling html or xlm documents
 import nltk  # Manually Added
 from nltk.corpus import stopwords  # Manually Added
 from collections import defaultdict  # Manually Added
+from urllib.robotparser import RobotFileParser # Manually added
 
 nltk.download('stopwords')  # Downloads a list of stopwords to be used
 stop_Words = set(stopwords.words('english'))  # Downloads the english version
@@ -49,16 +50,22 @@ def extract_next_links(url, resp):
 
     print(f'\t\tURL Name ---> : {url}\t\t')  # Should print the url names so that we can see what's going on and to help debug
 
-    if resp.status == 200:  # Checks to see if the status code is valid https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
-        if resp.raw_response is not None:
-            listOfLinkText = raw_Response(resp)
-            counter = 0
-            all_Count(listOfLinkText, counter)
-            print(f'\t\tURL Text ---> : {listOfLinkText}\t\t')  # Prints all valid text which can later be used to tuple url with wordset https://www.crummy.com/software/BeautifulSoup/bs4/doc/#get-text
-        else:
-            return []
-    else:
+    if resp.status != 200:  # Checks to see if the status code is valid https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
         return []
+
+    if resp.raw_response is None:   # If response is empty return
+        return []
+    
+    if not checkRobotFile(url):      # If we aren't allowed to crawl return
+        return [] 
+    
+
+
+    listOfLinkText = checkForContent(resp)
+    counter = 0
+    all_Count(listOfLinkText, counter)
+    print(f'\t\tURL Text ---> : {listOfLinkText}\t\t')  # Prints all valid text which can later be used to tuple url with wordset https://www.crummy.com/software/BeautifulSoup/bs4/doc/#get-text
+
     counter = all_Count(listOfLinkText, counter)            # Gets the number of words per page, and starts tallying all total words
     words_In_Page[counter] = url                            # Assigns and maps the number of words per page to each specific url
     listOfLinks = getAllUrls(listOfLinks)                   # Gets all links within a url (recurrsive/inception like behavior)
@@ -104,7 +111,7 @@ def is_valid(url):
         raise
 
 
-def raw_Response(resp) -> list[str]:
+def checkForContent(resp) -> list[str]:
     soup = BeautifulSoup(resp.raw_response.content, 'lxml')  # Creating a soup object to begin breaking down
     # the url
     listOfLinkText = soup.get_text()  # Gets all the legit text from the website
@@ -137,3 +144,12 @@ def convertToAbsolute(url, urlList) -> list[str]:
         else:
             completeUrls.append(f"{url.rstrip('/')}/{complete_link}")   # If it's relative, strip thisLink and add currLink to the end 
     return completeUrls
+
+def checkRobotFile(url):
+    rp = RobotFileParser()
+    rp.set_url(urljoin(url, "/robots.txt"))
+    try:
+        rp.read()
+    except Exception:
+        return True
+    return rp.can_fetch("*", url)
