@@ -139,10 +139,12 @@ def convertToAbsolute(url, urlList) -> list[str]:
         parsedLink = urlparse(complete_link) # Parse the abso link to verify that it's abosulte
         if parsedLink.scheme:
             completeUrls.append(complete_link)  # If it's complete just add
-        elif parsedLink.netloc
+        elif parsedLink.netloc:
             completeUrls.append(f"http{complete_link}") # If it's partial, just add http
         else:
-            completeUrls.append(f"{url.rstrip('/')}/{complete_link}")   # If it's relative, strip thisLink and add currLink to the end 
+            completeUrls.append(f"{url.rstrip('/')}/{complete_link}")   # If it's relative, strip thisLink and add currLink to the end
+    completeUrls = [urldefrag(u).url for u in completeUrls]
+    completeUrls = list(set(completeUrls))
     return completeUrls
 
 def checkRobotFile(url):
