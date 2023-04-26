@@ -5,6 +5,12 @@ from utils.download import download
 from utils import get_logger
 import scraper
 import time
+from scraper import count_unique_pages
+from scraper import longest_page_words
+from scraper import longest_page
+from scraper import most_common_words
+from scraper import getSubDomains
+
 
 
 class Worker(Thread):
@@ -35,3 +41,11 @@ class Worker(Thread):
                 self.frontier.add_url(scraped_url)
             self.frontier.mark_url_complete(tbd_url)
             time.sleep(self.config.time_delay)
+        
+        print(count_unique_pages)
+        print(longest_page_words)
+        print(longest_page)
+        print(most_common_words)
+        subdomain_counts = getSubDomains(words_In_Page)
+        for url, count in subdomain_counts:
+            print(f"{url}, {count}")

@@ -60,8 +60,8 @@ def extract_next_links(url, resp):
         return [] 
     
 
-
-    listOfLinkText = checkForContent(resp)
+    soup = BeautifulSoup(resp.raw_response.content, 'lxml')  # Creating a soup object to begin breaking down
+    listOfLinkText = checkForContent(soup)
     counter = 0
     all_Count(listOfLinkText, counter)
     print(f'\t\tURL Text ---> : {listOfLinkText}\t\t')  # Prints all valid text which can later be used to tuple url with wordset https://www.crummy.com/software/BeautifulSoup/bs4/doc/#get-text
@@ -111,8 +111,7 @@ def is_valid(url):
         raise
 
 
-def checkForContent(resp) -> list[str]:
-    soup = BeautifulSoup(resp.raw_response.content, 'lxml')  # Creating a soup object to begin breaking down
+def checkForContent(soup) -> list[str]:
     # the url
     listOfLinkText = soup.get_text()  # Gets all the legit text from the website
     listOfLinkText = listOfLinkText.strip().split()  # Removes whitespace, and splits into a list of words
@@ -127,7 +126,7 @@ def all_Count(listofLinkText, counter) -> int:
             counter += 1
     return counter
 
-def getAllUrls(listOfLinks) -> list:
+def getAllUrls(listOfLinks, soup) -> list:
     for everyLink in soup.findAll('a')              # Extract all the urls found within a page using 'a' tag
         listOfLinks.append(everyLink.get('href'))   # Uses the href tag to get the urls 
     return listOfLinks
@@ -182,7 +181,7 @@ def getSubDomains(words_In_Page):
     subdomain_counts = defaultdict(int)
     subdomain_pages = defaultdict(set)
 
-    for url in words_in_page.values():
+    for url in words_In_Page.values():
         parsed_url = urlparse(url)
         if parsed_url.netloc.endswith('.ics.uci.edu'):
             subdomain = parsed_url.netloc.split(".")[0]
