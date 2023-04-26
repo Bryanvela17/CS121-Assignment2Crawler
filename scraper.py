@@ -68,7 +68,7 @@ def extract_next_links(url, resp):
 
     counter = all_Count(listOfLinkText, counter)            # Gets the number of words per page, and starts tallying all total words
     words_In_Page[counter] = url                            # Assigns and maps the number of words per page to each specific url
-    listOfLinks = getAllUrls(listOfLinks)                   # Gets all links within a url (recurrsive/inception like behavior)
+    listOfLinks = getAllUrls(listOfLinks, soup)                   # Gets all links within a url (recurrsive/inception like behavior)
     listOfLinks = convertToAbsolute(url, listOfLinks)       # Converts all urls to absolute
     print(f'\t\tThis URL: {url} has this many words ---> len{listOfLinkText}\t\t')
     
@@ -100,7 +100,7 @@ def is_valid(url):
             r".*\.(css|js|bmp|gif|jpe?g|jpeg|jpg|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
             + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
-            + r"|ps|eps|tex|ppt|pptx|ppsx|ps|doc|docx|xls|xlsx|names"
+            + r"|ps|eps|tex|ppt|pptx|ppsx|doc|docx|xls|xlsx|names"
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
@@ -165,7 +165,7 @@ def count_unique_pages(words_In_Page) -> int:
     return len(uni_Links)
 
 def longest_page_words(words_In_Page) -> int:
-    numberOfWords = max(words_In_Pagekeys())
+    numberOfWords = max(words_In_Page.keys())
     return numberOfWords
 
 def longest_page(numberOfWords, words_In_Page) -> str:
@@ -174,7 +174,7 @@ def longest_page(numberOfWords, words_In_Page) -> str:
 
 def most_common_words(count_Words):
     sortedList = sorted(count_Words.items(), key=lambda x: x[1], reverse=True)
-    mostCommon = [entry[0] for entry in sort_by_frequency[:50]]
+    mostCommon = [entry[0] for entry in sortedList[:50]]
     return mostCommon
     
 def getSubDomains(words_In_Page):
@@ -184,7 +184,7 @@ def getSubDomains(words_In_Page):
     for url in words_In_Page.values():
         parsed_url = urlparse(url)
         if parsed_url.netloc.endswith('.ics.uci.edu'):
-            subdomain = parsed_url.netloc.split(".")[0]
+            subdomain = parsed_url.netloc.split(b".")[0].decode()
             subdomain_counts[subdomain] += 1
             subdomain_pages[subdomain].add(url)
 
@@ -193,3 +193,4 @@ def getSubDomains(words_In_Page):
     
     # Return a list of tuples with the URL and count for each subdomain
     return [(f'http://{subdomain}.ics.uci.edu', len(subdomain_pages[subdomain])) for subdomain, _ in sorted_subdomains]
+    
