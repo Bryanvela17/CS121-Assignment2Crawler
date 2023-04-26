@@ -127,7 +127,7 @@ def all_Count(listofLinkText, counter) -> int:
     return counter
 
 def getAllUrls(listOfLinks, soup) -> list:
-    for everyLink in soup.findAll('a')              # Extract all the urls found within a page using 'a' tag
+    for everyLink in soup.findAll('a'):              # Extract all the urls found within a page using 'a' tag
         listOfLinks.append(everyLink.get('href'))   # Uses the href tag to get the urls 
     return listOfLinks
 
