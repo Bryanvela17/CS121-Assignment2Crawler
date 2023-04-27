@@ -70,9 +70,9 @@ def extract_next_links(url, resp):
     words_In_Page[counter] = url                            # Assigns and maps the number of words per page to each specific url
     listOfLinks = getAllUrls(listOfLinks, soup)                   # Gets all links within a url (recurrsive/inception like behavior)
     listOfLinks = convertToAbsolute(url, listOfLinks)       # Converts all urls to absolute
-    print(f'\t\tThis URL: {url} has this many words ---> len{listOfLinkText}\t\t')
-    for token, freq in count_Words.items():
-        print(f"{token} -> {freq}")
+    print(f'\t\tThis URL: {url} has this many words ---> {len(listOfLinkText)}\t\t')
+    #for token, freq in count_Words.items():
+    #    print(f"{token} -> {freq}")
     return listOfLinks
 
 
@@ -118,9 +118,9 @@ def checkForContent(soup) -> list[str]:
 def all_Count(listofLinkText, counter) -> int:
     for word in listofLinkText:
         word = word.lower()
-        sieveTheseWords = re.findAll(ALPHANUMERICAL_WORDS, word)
+        sieveTheseWords = re.findall(ALPHANUMERICAL_WORDS, word)
         for word in sieveTheseWords:
-            if word not in sieveTheseWords:
+            if word not in stop_Words:
                 count_Words[word] += 1
                 counter += 1
     return counter
