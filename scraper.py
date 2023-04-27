@@ -193,4 +193,19 @@ def getSubDomains(words_In_Page):
     
     # Return a list of tuples with the URL and count for each subdomain
     return [(f'http://{subdomain}.ics.uci.edu', len(subdomain_pages[subdomain])) for subdomain, _ in sorted_subdomains]
-    
+
+def printCrawlerSummary():
+        print(f'\t\t\t\t\tCrawler Report\t\t\t\t\t')
+
+        totalNumOfUniquePages = count_unique_pages(words_In_Page)
+        print(f'\t\t\tTotal Number of Unique Pages: {totalNumOfUniquePages}')
+        
+        longestNumOfWords = longest_page_words(words_In_Page)
+        nameOfUrlWithLongestNumOfWords = longest_page(longestNumOfWords, words_In_Page)
+        print(f'\t\t\tThis url: {nameOfUrlWithLongestNumOfWords} has the most words with: {longestNumOfWords} words')
+        topFiftyMostCommonWords = most_common_words(count_Words)
+        print('\n'.join(['\t\t\t' + word for word in topFiftyMostCommonWords]))
+        subDomainsOfICS = getSubDomains(words_In_Page)
+        output_lines = [f"\t\t\t{url}, {count}" for url, count in subDomainsOfICS]
+        print('\n'.join(output_lines))
+
