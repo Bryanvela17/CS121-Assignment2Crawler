@@ -64,7 +64,7 @@ def extract_next_links(url, resp):
     listOfLinkText = checkForContent(soup)
     counter = 0
     all_Count(listOfLinkText, counter)
-    print(f'\t\tURL Text ---> : {listOfLinkText}\t\t')  # Prints all valid text which can later be used to tuple url with wordset https://www.crummy.com/software/BeautifulSoup/bs4/doc/#get-text
+    #print(f'\t\tURL Text ---> : {listOfLinkText}\t\t')  # Prints all valid text which can later be used to tuple url with wordset https://www.crummy.com/software/BeautifulSoup/bs4/doc/#get-text
 
     counter = all_Count(listOfLinkText, counter)            # Gets the number of words per page, and starts tallying all total words
     words_In_Page[counter] = url                            # Assigns and maps the number of words per page to each specific url
