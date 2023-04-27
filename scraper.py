@@ -71,17 +71,14 @@ def extract_next_links(url, resp):
     listOfLinks = getAllUrls(listOfLinks, soup)                   # Gets all links within a url (recurrsive/inception like behavior)
     listOfLinks = convertToAbsolute(url, listOfLinks)       # Converts all urls to absolute
     print(f'\t\tThis URL: {url} has this many words ---> len{listOfLinkText}\t\t')
-    
-
+    for token, freq in count_Words.items():
+        print(f"{token} -> {freq}")
     return listOfLinks
 
 
-ALLOWED_URLS = [r'^.+\.ics\.uci\.edu(/.*)?$',
-                r'^.+\.cs\.uci\.edu(/.*)?$',
-                r'^.+\.informatics\.uci\.edu(/.*)?$',
-                r'^.+\.stat\.uci\.edu(/.*)?$']
+ALLOWED_URLS = [r'^.+\.ics\.uci\.edu(/.*)?$', r'^.+\.cs\.uci\.edu(/.*)?$', r'^.+\.informatics\.uci\.edu(/.*)?$', r'^.+\.stat\.uci\.edu(/.*)?$']
 ALLOWED_URL_REGEXES = [re.compile(regex) for regex in ALLOWED_URLS]
-
+ALPHANUMERICAL_WORDS = re.compile('[a-zA-Z0-9]+')
 
 def is_valid(url):
     # Decide whether to crawl this url or not.
@@ -121,9 +118,11 @@ def checkForContent(soup) -> list[str]:
 def all_Count(listofLinkText, counter) -> int:
     for word in listofLinkText:
         word = word.lower()
-        if word not in stop_Words:
-            count_Words[word] += 1
-            counter += 1
+        sieveTheseWords = re.findAll(ALPHANUMERICAL_WORDS, word)
+        for word in sieveTheseWords
+            if word not in sieveTheseWords:
+                count_Words[word] += 1
+                counter += 1
     return counter
 
 def getAllUrls(listOfLinks, soup) -> list:
