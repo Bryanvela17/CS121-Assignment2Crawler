@@ -119,7 +119,7 @@ def all_Count(listofLinkText, counter) -> int:
     for word in listofLinkText:
         word = word.lower()
         sieveTheseWords = re.findAll(ALPHANUMERICAL_WORDS, word)
-        for word in sieveTheseWords
+        for word in sieveTheseWords:
             if word not in sieveTheseWords:
                 count_Words[word] += 1
                 counter += 1
