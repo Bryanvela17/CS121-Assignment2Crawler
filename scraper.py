@@ -37,7 +37,7 @@ def scraper(url, resp):
     return [link for link in links if is_valid(link)]
 
 
-def extract_next_links(url, resp, prevUrlText, visitedList):
+def extract_next_links(url, resp, visitedList):
     # Implementation required.
     # url: the URL that was used to get the page
     # resp.url: the actual url of the page
@@ -66,7 +66,7 @@ def extract_next_links(url, resp, prevUrlText, visitedList):
     soup = BeautifulSoup(resp.raw_response.content, 'lxml')  # Creating a soup object to begin breaking down
     listOfLinkText = checkForContent(soup)
     #place the avoidTraps here with the visitedSet to check the currURL and its list of LinkText
-    if avoidTraps(visitedList[-1],url):
+    if len(visitedList) != 0 and avoidTraps(visitedList[-1],url):
         return []
     
     counter = 0
