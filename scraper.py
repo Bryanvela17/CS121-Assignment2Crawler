@@ -33,11 +33,11 @@ stop_Words = stop_Words.union(add_These_Words)
 def scraper(url, resp):
     prevUrlText = []
     visitedList = []
-    links = extract_next_links(url, resp, visitedList)
+    links = extract_next_links(url, resp, prevUrlText, visitedList)
     return [link for link in links if is_valid(link)]
 
 
-def extract_next_links(url, resp, prevUrlList, visitedList):
+def extract_next_links(url, resp, prevUrlText, visitedList):
     # Implementation required.
     # url: the URL that was used to get the page
     # resp.url: the actual url of the page
