@@ -5,6 +5,7 @@ import nltk  # Manually Added
 from nltk.corpus import stopwords  # Manually Added
 from collections import defaultdict  # Manually Added
 from urllib.robotparser import RobotFileParser # Manually added
+from simhash import Simhash
 
 nltk.download('stopwords')  # Downloads a list of stopwords to be used
 stop_Words = set(stopwords.words('english'))  # Downloads the english version
@@ -30,11 +31,12 @@ stop_Words = stop_Words.union(add_These_Words)
 
 
 def scraper(url, resp):
-    links = extract_next_links(url, resp)
+    visitedList = ['empty']
+    links = extract_next_links(url, resp, visitedList)
     return [link for link in links if is_valid(link)]
 
 
-def extract_next_links(url, resp):
+def extract_next_links(url, resp, visitedList):
     # Implementation required.
     # url: the URL that was used to get the page
     # resp.url: the actual url of the page
@@ -62,6 +64,13 @@ def extract_next_links(url, resp):
 
     soup = BeautifulSoup(resp.raw_response.content, 'lxml')  # Creating a soup object to begin breaking down
     listOfLinkText = checkForContent(soup)
+    #place the avoidTraps here with the visitedSet to check the currURL and its list of LinkText
+    if len(visitedList) > 1:
+        print(visitedList)
+
+        if avoidTraps(visitedList[-1],url):
+            return []
+    
     counter = 0
     all_Count(listOfLinkText, counter)
     #print(f'\t\tURL Text ---> : {listOfLinkText}\t\t')  # Prints all valid text which can later be used to tuple url with wordset https://www.crummy.com/software/BeautifulSoup/bs4/doc/#get-text
@@ -73,6 +82,12 @@ def extract_next_links(url, resp):
     print(f'\t\tThis URL: {url} has this many words ---> {len(listOfLinkText)}\t\t')
     #for token, freq in count_Words.items():
     #    print(f"{token} -> {freq}")
+    if url not in visitedList:
+        visitedList.append(url)
+    else: #if it was already visited return empty
+        return [] 
+
+
     return listOfLinks
 
 
@@ -93,6 +108,15 @@ def is_valid(url):
         if not any(regex.match(parsed.netloc) for regex in
                    ALLOWED_URL_REGEXES):  # This returns false for a incompatibe url
             return False
+        
+        #list of all the bad endings for urls
+        badList = ["css","js","bmp","gif","jpe?g","jpeg","jpg","ico","png","tiff?","mid","mp2","mp3","mp4","wav","avi","mov","mpeg","ram","m4v","mkv","ogg","ogv","pdf","ps","eps","tex","ppt","pptx","ppsx","doc","docx","xls","xlsx","names","data","dat","exe","bz2","tar","msi","bin","7z","psd","dmg","iso","epub","dll","cnf","tgz","sha1","thmx","mso","arff","rtf","jar","csv","rm","smil","wmv","swf","wma","zip","rar","gz"]
+
+        url_ending = url.split(".")[-1]
+
+        if url_ending in badList:
+            return False
+                   
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|jpeg|jpg|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
@@ -207,4 +231,27 @@ def printCrawlerSummary():
         subDomainsOfICS = getSubDomains(words_In_Page)
         output_lines = [f"\t\t\t{url}, {count}" for url, count in subDomainsOfICS]
         print('\n'.join(output_lines))
+
+
+def avoidTraps(prevUrl, url):
+    #generate a simhash from url
+    currSimHash = url.encode('utf-8')
+    prevSimHash = prevUrl.encode('utf-8')
+
+    hamDistance = currSimHash.distance(prevSimHash) #calculate the hamming distance for the hash values
+
+    #if above threshold(5) then it is too similar
+
+    if hamDistance >= 5: #too similar its a trap
+        return True
+    else:
+        return False
+
+
+
+
+
+
+
+
 
