@@ -65,6 +65,7 @@ def extract_next_links(url, resp, visitedList):
     soup = BeautifulSoup(resp.raw_response.content, 'lxml')  # Creating a soup object to begin breaking down
     listOfLinkText = checkForContent(soup)
     #place the avoidTraps here with the visitedSet to check the currURL and its list of LinkText
+    print('sdfsdklfjlsdjfklsdjlfkjsdklf')
     if len(visitedList) > 1:
         print("sdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdf")
         print(visitedList)
