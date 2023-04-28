@@ -32,7 +32,6 @@ stop_Words = stop_Words.union(add_These_Words)
 
 def scraper(url, resp):
     visitedList = ['empty']
-    print("sdfhjsdjkfklsdf")
     links = extract_next_links(url, resp, visitedList)
     return [link for link in links if is_valid(link)]
 
