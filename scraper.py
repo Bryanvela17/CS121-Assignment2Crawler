@@ -31,9 +31,9 @@ stop_Words = stop_Words.union(add_These_Words)
 
 
 def scraper(url, resp):
-    prevUrlText = []
-    visitedList = []
-    links = extract_next_links(url, resp, prevUrlText, visitedList)
+    visitedList = ['empty']
+    print("sdfsdfsdfsdfsd")
+    links = extract_next_links(url, resp, visitedList)
     return [link for link in links if is_valid(link)]
 
 
@@ -66,8 +66,12 @@ def extract_next_links(url, resp, visitedList):
     soup = BeautifulSoup(resp.raw_response.content, 'lxml')  # Creating a soup object to begin breaking down
     listOfLinkText = checkForContent(soup)
     #place the avoidTraps here with the visitedSet to check the currURL and its list of LinkText
-    if len(visitedList) != 0 and avoidTraps(visitedList[-1],url):
-        return []
+    if len(visitedList) > 1:
+        print("sdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdf")
+        print(visitedList)
+
+        if avoidTraps(visitedList[-1],url):
+            return []
     
     counter = 0
     all_Count(listOfLinkText, counter)
