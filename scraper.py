@@ -27,8 +27,7 @@ add_These_Words = {"a", "about", "above", "after", "again", "against", "all", "a
                    "yours", "yourself", "yourselves"}
 stop_Words = stop_Words.union(add_These_Words)
 
-
-
+#comment
 def scraper(url, resp):
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
