@@ -85,16 +85,14 @@ def extract_next_links(url, resp):
 ALLOWED_URLS = [r'^.+\.ics\.uci\.edu(/.*)?$', r'^.+\.cs\.uci\.edu(/.*)?$', r'^.+\.informatics\.uci\.edu(/.*)?$', r'^.+\.stat\.uci\.edu(/.*)?$']
 ALLOWED_URL_REGEXES = [re.compile(regex) for regex in ALLOWED_URLS]
 ALPHANUMERICAL_WORDS = re.compile('[a-zA-Z]+')
-BAD_URL = ["css","js","bmp","gif","jpe?g","jpeg","jpg","ico","png","tiff?","mid","mp2","mp3","mp4","wav",
-                  "avi","mov","mpeg","ram","m4v","mkv","ogg","ogv","pdf","ps","eps","tex","ppt","pptx","ppsx","doc",
-                  "docx","xls","xlsx","names","data","dat","exe","bz2","tar","msi","bin","7z","psd","dmg","iso","epub",
-                  "dll","cnf","tgz","sha1","thmx","mso","arff","rtf","jar","csv","rm","smil","wmv","swf","wma","zip","rar","gz"]
+BAD_URL = ["pdf", "ppt", "pptx", "png", "zip", "jpeg", "jpg", "ppsx"] # maybe add war, img, apk
 
 def is_valid(url):
     # Decide whether to crawl this url or not.
     # If you decide to crawl it, return True; otherwise return False.
     # There are already some conditions that return False.
     try:
+        bad_url_found = False
         parsed = urlparse(url)
         if parsed is None:  # If parsed object is empty, exit and return false
             return False
@@ -183,9 +181,9 @@ def checkRobotFile(url) -> bool:
 def checkForTrapsAndSimilarity(currentTextFoundInUrl) -> bool:
     global previousListOfStrings
     if previousListOfStrings:
-        s = SequenceMatcher(lambda x: x == " ", currText = currentTextFoundInUrl, prevText = previousListOfStrings)
+        s = SequenceMatcher(lambda x: x == " ", currentTextFoundInUrl, previousListOfStrings)
         percentageSimilar = s.ratio()
-        if percentageSimilar >= .75:
+        if percentageSimilar >= .90:
             return True
         else:
             previousListOfStrings = currentTextFoundInUrl
