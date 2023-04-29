@@ -2,9 +2,9 @@ import re
 from urllib.parse import urlparse, urldefrag, urljoin
 from bs4 import BeautifulSoup  ## This is a library for web crawling html or xlm documents
 import nltk  # Manually Added
-from nltk.corpus import stopwords  # Manually Added
+from nltk.corpus import stopwords  # Manually Added https://pythonspot.com/nltk-stop-words/ 
 from collections import defaultdict  # Manually Added
-from urllib.robotparser import RobotFileParser # Manually added
+from urllib.robotparser import RobotFileParser # Manually added https://docs.python.org/3/library/urllib.robotparser.html 
 
 nltk.download('stopwords')  # Downloads a list of stopwords to be used
 stop_Words = set(stopwords.words('english'))  # Downloads the english version
@@ -46,7 +46,7 @@ def extract_next_links(url, resp):
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
 
     listOfLinks = []  # This is where the list of hyperlinks will go
-    listOfLinkText = []  # Empty string needed for adding all the words in each url
+    parsedText = []  # Empty string needed for adding all the words in each url
 
     print(f'\t\tURL Name ---> : {url}\t\t')  # Should print the url names so that we can see what's going on and to help debug
 
@@ -61,16 +61,17 @@ def extract_next_links(url, resp):
     
 
     soup = BeautifulSoup(resp.raw_response.content, 'lxml')  # Creating a soup object to begin breaking down
-    listOfLinkText = checkForContent(soup)
+    allText = soup.get_text()
+    parsedText = checkForContent(allText)
     counter = 0
-    all_Count(listOfLinkText, counter)
-    #print(f'\t\tURL Text ---> : {listOfLinkText}\t\t')  # Prints all valid text which can later be used to tuple url with wordset https://www.crummy.com/software/BeautifulSoup/bs4/doc/#get-text
+    all_Count(parsedText, counter)
+    #print(f'\t\tURL Text ---> : {parsedText}\t\t')  # Prints all valid text which can later be used to tuple url with wordset https://www.crummy.com/software/BeautifulSoup/bs4/doc/#get-text
 
-    counter = all_Count(listOfLinkText, counter)            # Gets the number of words per page, and starts tallying all total words
+    counter = all_Count(parsedText, counter)            # Gets the number of words per page, and starts tallying all total words
     words_In_Page[counter] = url                            # Assigns and maps the number of words per page to each specific url
     listOfLinks = getAllUrls(listOfLinks, soup)                   # Gets all links within a url (recurrsive/inception like behavior)
     listOfLinks = convertToAbsolute(url, listOfLinks)       # Converts all urls to absolute
-    print(f'\t\tThis URL: {url} has this many words ---> {len(listOfLinkText)}\t\t')
+    print(f'\t\tThis URL: {url} has this many words ---> {len(parsedText)}\t\t')
     #for token, freq in count_Words.items():
     #    print(f"{token} -> {freq}")
     return listOfLinks
@@ -78,7 +79,7 @@ def extract_next_links(url, resp):
 
 ALLOWED_URLS = [r'^.+\.ics\.uci\.edu(/.*)?$', r'^.+\.cs\.uci\.edu(/.*)?$', r'^.+\.informatics\.uci\.edu(/.*)?$', r'^.+\.stat\.uci\.edu(/.*)?$']
 ALLOWED_URL_REGEXES = [re.compile(regex) for regex in ALLOWED_URLS]
-ALPHANUMERICAL_WORDS = re.compile('[a-zA-Z0-9]+')
+ALPHANUMERICAL_WORDS = re.compile('[a-zA-Z]+')
 BAD_URL = ["css","js","bmp","gif","jpe?g","jpeg","jpg","ico","png","tiff?","mid","mp2","mp3","mp4","wav",
                   "avi","mov","mpeg","ram","m4v","mkv","ogg","ogv","pdf","ps","eps","tex","ppt","pptx","ppsx","doc",
                   "docx","xls","xlsx","names","data","dat","exe","bz2","tar","msi","bin","7z","psd","dmg","iso","epub",
@@ -118,15 +119,13 @@ def is_valid(url):
         raise
 
 
-def checkForContent(soup) -> list[str]:
-    # the url
-    listOfLinkText = soup.get_text()  # Gets all the legit text from the website
-    listOfLinkText = listOfLinkText.strip().split()  # Removes whitespace, and splits into a list of words
-    return listOfLinkText
+def checkForContent(allText) -> list[str]:
+    parsedText = allText.strip().split()  # Removes whitespace, and splits into a list of words
+    return parsedText
 
 
-def all_Count(listofLinkText, counter) -> int:
-    for word in listofLinkText:
+def all_Count(parsedText, counter) -> int:
+    for word in parsedText:
         word = word.lower()
         sieveTheseWords = re.findall(ALPHANUMERICAL_WORDS, word)
         for word in sieveTheseWords:
@@ -193,7 +192,7 @@ def getSubDomains(words_In_Page):
     for url in words_In_Page.values():
         parsed_url = urlparse(url)
         if parsed_url.netloc.endswith('.ics.uci.edu'):
-            subdomain = parsed_url.netloc.split(b".")[0].decode()
+            subdomain = parsed_url.netloc.split(".")[0]
             subdomain_counts[subdomain] += 1
             subdomain_pages[subdomain].add(url)
 
