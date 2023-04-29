@@ -168,6 +168,18 @@ def checkRobotFile(url) -> bool:
         return True                     
     return rp.can_fetch("*", url)           # If we are allowed to crawl return true, else false
 
+
+'''
+/*********************************************************************************************
+*                                           Citation:
+*    Title: Assignment 2 - checkForTrapsAndSimilarity method 
+*    Author: Python Software Foundation
+*    Date Accessed: 04/28/23
+*    Code version: Python
+*    Availability: https://docs.python.org/3/library/difflib.html#sequencematcher-examples 
+*    Obtained: TBD Need TO DO 
+**********************************************************************************************/
+'''
 def checkForTrapsAndSimilarity(currentTextFoundInUrl) -> bool:
     global previousListOfStrings
     if previousListOfStrings:
