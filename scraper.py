@@ -79,6 +79,10 @@ def extract_next_links(url, resp):
 ALLOWED_URLS = [r'^.+\.ics\.uci\.edu(/.*)?$', r'^.+\.cs\.uci\.edu(/.*)?$', r'^.+\.informatics\.uci\.edu(/.*)?$', r'^.+\.stat\.uci\.edu(/.*)?$']
 ALLOWED_URL_REGEXES = [re.compile(regex) for regex in ALLOWED_URLS]
 ALPHANUMERICAL_WORDS = re.compile('[a-zA-Z0-9]+')
+BAD_URL = ["css","js","bmp","gif","jpe?g","jpeg","jpg","ico","png","tiff?","mid","mp2","mp3","mp4","wav",
+                  "avi","mov","mpeg","ram","m4v","mkv","ogg","ogv","pdf","ps","eps","tex","ppt","pptx","ppsx","doc",
+                  "docx","xls","xlsx","names","data","dat","exe","bz2","tar","msi","bin","7z","psd","dmg","iso","epub",
+                  "dll","cnf","tgz","sha1","thmx","mso","arff","rtf","jar","csv","rm","smil","wmv","swf","wma","zip","rar","gz"]
 
 def is_valid(url):
     # Decide whether to crawl this url or not.
@@ -92,6 +96,12 @@ def is_valid(url):
             return False
         if not any(regex.match(parsed.netloc) for regex in
                    ALLOWED_URL_REGEXES):  # This returns false for a incompatibe url
+            return False
+        for bad_url in BAD_URL:
+            if bad_url in url:
+                bad_url_found = True
+                break
+        if bad_url_found:
             return False
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|jpeg|jpg|ico"
