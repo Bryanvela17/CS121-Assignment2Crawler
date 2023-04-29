@@ -2,14 +2,16 @@ import re
 from urllib.parse import urlparse, urldefrag, urljoin
 from bs4 import BeautifulSoup  ## This is a library for web crawling html or xlm documents
 import nltk  # Manually Added
-from nltk.corpus import stopwords  # Manually Added
+from nltk.corpus import stopwords  # Manually Added https://pythonspot.com/nltk-stop-words/ 
 from collections import defaultdict  # Manually Added
-from urllib.robotparser import RobotFileParser # Manually added
+from difflib import SequenceMatcher # Manually Added https://docs.python.org/3/library/difflib.html 
+from urllib.robotparser import RobotFileParser # Manually added https://docs.python.org/3/library/urllib.robotparser.html 
 
 nltk.download('stopwords')  # Downloads a list of stopwords to be used
 stop_Words = set(stopwords.words('english'))  # Downloads the english version
 count_Words = defaultdict(int)
 words_In_Page = {}
+previousListOfStrings = []
 # Extra stop words that aren't in the download
 add_These_Words = {"a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are",
                    "aren't", "as", "at", "be", "because", "been", "before", "being", "below", "between", "both", "but",
@@ -46,7 +48,7 @@ def extract_next_links(url, resp):
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
 
     listOfLinks = []  # This is where the list of hyperlinks will go
-    listOfLinkText = []  # Empty string needed for adding all the words in each url
+    parsedText = []  # Empty string needed for adding all the words in each url
 
     print(f'\t\tURL Name ---> : {url}\t\t')  # Should print the url names so that we can see what's going on and to help debug
 
@@ -61,16 +63,20 @@ def extract_next_links(url, resp):
     
 
     soup = BeautifulSoup(resp.raw_response.content, 'lxml')  # Creating a soup object to begin breaking down
-    listOfLinkText = checkForContent(soup)
+    allText = soup.get_text()
+    if checkForTrapsAndSimilarity(allText):                # If bool value of resultOfTrap is true, then return and exit function
+        return []
+    
+    parsedText = checkForContent(allText)
     counter = 0
-    all_Count(listOfLinkText, counter)
-    #print(f'\t\tURL Text ---> : {listOfLinkText}\t\t')  # Prints all valid text which can later be used to tuple url with wordset https://www.crummy.com/software/BeautifulSoup/bs4/doc/#get-text
+    all_Count(parsedText, counter)
+    #print(f'\t\tURL Text ---> : {parsedText}\t\t')  # Prints all valid text which can later be used to tuple url with wordset https://www.crummy.com/software/BeautifulSoup/bs4/doc/#get-text
 
-    counter = all_Count(listOfLinkText, counter)            # Gets the number of words per page, and starts tallying all total words
+    counter = all_Count(parsedText, counter)            # Gets the number of words per page, and starts tallying all total words
     words_In_Page[counter] = url                            # Assigns and maps the number of words per page to each specific url
     listOfLinks = getAllUrls(listOfLinks, soup)                   # Gets all links within a url (recurrsive/inception like behavior)
     listOfLinks = convertToAbsolute(url, listOfLinks)       # Converts all urls to absolute
-    print(f'\t\tThis URL: {url} has this many words ---> {len(listOfLinkText)}\t\t')
+    print(f'\t\tThis URL: {url} has this many words ---> {len(parsedText)}\t\t')
     #for token, freq in count_Words.items():
     #    print(f"{token} -> {freq}")
     return listOfLinks
@@ -78,13 +84,15 @@ def extract_next_links(url, resp):
 
 ALLOWED_URLS = [r'^.+\.ics\.uci\.edu(/.*)?$', r'^.+\.cs\.uci\.edu(/.*)?$', r'^.+\.informatics\.uci\.edu(/.*)?$', r'^.+\.stat\.uci\.edu(/.*)?$']
 ALLOWED_URL_REGEXES = [re.compile(regex) for regex in ALLOWED_URLS]
-ALPHANUMERICAL_WORDS = re.compile('[a-zA-Z0-9]+')
+ALPHANUMERICAL_WORDS = re.compile('[a-zA-Z]+')
+BAD_URL = ["pdf", "ppt", "pptx", "png", "zip", "jpeg", "jpg", "ppsx"] # maybe add war, img, apk
 
 def is_valid(url):
     # Decide whether to crawl this url or not.
     # If you decide to crawl it, return True; otherwise return False.
     # There are already some conditions that return False.
     try:
+        bad_url_found = False
         parsed = urlparse(url)
         if parsed is None:  # If parsed object is empty, exit and return false
             return False
@@ -92,6 +100,12 @@ def is_valid(url):
             return False
         if not any(regex.match(parsed.netloc) for regex in
                    ALLOWED_URL_REGEXES):  # This returns false for a incompatibe url
+            return False
+        for bad_url in BAD_URL:
+            if bad_url in url:
+                bad_url_found = True
+                break
+        if bad_url_found:
             return False
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|jpeg|jpg|ico"
@@ -108,15 +122,13 @@ def is_valid(url):
         raise
 
 
-def checkForContent(soup) -> list[str]:
-    # the url
-    listOfLinkText = soup.get_text()  # Gets all the legit text from the website
-    listOfLinkText = listOfLinkText.strip().split()  # Removes whitespace, and splits into a list of words
-    return listOfLinkText
+def checkForContent(allText) -> list[str]:
+    parsedText = allText.strip().split()  # Removes whitespace, and splits into a list of words
+    return parsedText
 
 
-def all_Count(listofLinkText, counter) -> int:
-    for word in listofLinkText:
+def all_Count(parsedText, counter) -> int:
+    for word in parsedText:
         word = word.lower()
         sieveTheseWords = re.findall(ALPHANUMERICAL_WORDS, word)
         for word in sieveTheseWords:
@@ -154,6 +166,33 @@ def checkRobotFile(url) -> bool:
         return True                     
     return rp.can_fetch("*", url)           # If we are allowed to crawl return true, else false
 
+
+'''
+/*********************************************************************************************
+*                                           Citation:
+*    Title: Assignment 2 - checkForTrapsAndSimilarity method 
+*    Author: Python Software Foundation
+*    Date Accessed: 04/28/23
+*    Code version: Python
+*    Availability: https://docs.python.org/3/library/difflib.html#sequencematcher-examples 
+*    Obtained: TBD Need TO DO 
+**********************************************************************************************/
+'''
+def checkForTrapsAndSimilarity(currentTextFoundInUrl) -> bool:
+    global previousListOfStrings
+    if previousListOfStrings:
+        s = SequenceMatcher(lambda x: x == " ", currentTextFoundInUrl, previousListOfStrings)
+        percentageSimilar = s.ratio()
+        if percentageSimilar >= .90:
+            return True
+        else:
+            previousListOfStrings = currentTextFoundInUrl
+            return False
+    else:
+        previousListOfStrings = currentTextFoundInUrl
+        return False
+
+
 def count_unique_pages(words_In_Page) -> int:
     uni_Links = set()
     for Link in words_In_Page.values(): # go through the links in the words_In_Page dict
@@ -183,7 +222,7 @@ def getSubDomains(words_In_Page):
     for url in words_In_Page.values():
         parsed_url = urlparse(url)
         if parsed_url.netloc.endswith('.ics.uci.edu'):
-            subdomain = parsed_url.netloc.split(b".")[0].decode()
+            subdomain = parsed_url.netloc.split(".")[0]
             subdomain_counts[subdomain] += 1
             subdomain_pages[subdomain].add(url)
 
@@ -207,4 +246,5 @@ def printCrawlerSummary():
         subDomainsOfICS = getSubDomains(words_In_Page)
         output_lines = [f"\t\t\t{url}, {count}" for url, count in subDomainsOfICS]
         print('\n'.join(output_lines))
+
 
