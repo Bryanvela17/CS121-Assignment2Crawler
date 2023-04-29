@@ -4,12 +4,14 @@ from bs4 import BeautifulSoup  ## This is a library for web crawling html or xlm
 import nltk  # Manually Added
 from nltk.corpus import stopwords  # Manually Added https://pythonspot.com/nltk-stop-words/ 
 from collections import defaultdict  # Manually Added
+from difflib import SequenceMatcher # Manually Added https://docs.python.org/3/library/difflib.html 
 from urllib.robotparser import RobotFileParser # Manually added https://docs.python.org/3/library/urllib.robotparser.html 
 
 nltk.download('stopwords')  # Downloads a list of stopwords to be used
 stop_Words = set(stopwords.words('english'))  # Downloads the english version
 count_Words = defaultdict(int)
 words_In_Page = {}
+previousListOfStrings = []
 # Extra stop words that aren't in the download
 add_These_Words = {"a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are",
                    "aren't", "as", "at", "be", "because", "been", "before", "being", "below", "between", "both", "but",
@@ -62,6 +64,9 @@ def extract_next_links(url, resp):
 
     soup = BeautifulSoup(resp.raw_response.content, 'lxml')  # Creating a soup object to begin breaking down
     allText = soup.get_text()
+    if checkForTrapsAndSimilarity(allText):                # If bool value of resultOfTrap is true, then return and exit function
+        return []
+    
     parsedText = checkForContent(allText)
     counter = 0
     all_Count(parsedText, counter)
@@ -162,6 +167,21 @@ def checkRobotFile(url) -> bool:
     except Exception:                       # If no robots.txt file, go ahead and crawl anyway
         return True                     
     return rp.can_fetch("*", url)           # If we are allowed to crawl return true, else false
+
+def checkForTrapsAndSimilarity(currentTextFoundInUrl) -> bool:
+    global previousListOfStrings
+    if previousListOfStrings:
+        s = SequenceMatcher(lambda x: x == " ", currText = currentTextFoundInUrl, prevText = previousListOfStrings)
+        percentageSimilar = s.ratio()
+        if percentageSimilar >= .75:
+            return True
+        else:
+            previousListOfStrings = currentTextFoundInUrl
+            return False
+    else:
+        previousListOfStrings = currentTextFoundInUrl
+        return False
+
 
 def count_unique_pages(words_In_Page) -> int:
     uni_Links = set()
