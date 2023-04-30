@@ -61,7 +61,7 @@ def extract_next_links(url, resp):
     if not checkRobotFile(url):      # If we aren't allowed to crawl return
         return [] 
     
-    if not check_URLSize(url, resp, max_size = (30 * 1024 * 1024)):
+    if not check_URLSize(url, resp, mbSize = (30 * 1024 * 1024)):
         return []
     
 
