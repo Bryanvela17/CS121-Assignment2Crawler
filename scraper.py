@@ -61,6 +61,9 @@ def extract_next_links(url, resp):
     if not checkRobotFile(url):      # If we aren't allowed to crawl return
         return [] 
     
+    if not check_URLSize(url, resp, max_size = (30 * 1024 * 1024)):
+        return []
+    
 
     soup = BeautifulSoup(resp.raw_response.content, 'lxml')  # Creating a soup object to begin breaking down
     allText = soup.get_text()
@@ -247,3 +250,12 @@ def printCrawlerSummary():
         output_lines = [f"\t\t\t{url}, {count}" for url, count in subDomainsOfICS]
         print('\n'.join(output_lines))
 
+
+def check_URLSize(url, resp, mbSize = (30 * 1024 * 1024)):
+    #page is too large
+    if len(resp.raw_response.content) > mbSize:
+        print(f'Skipping {url}: page size of: {len(resp.raw_response.content)} bytes is too large!')
+        return False
+
+    #page can be crawled
+    return True
