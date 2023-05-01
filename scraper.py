@@ -212,7 +212,7 @@ def checkForTrapsAndSimilarity(currentTextFoundInUrl) -> bool:
     if previousListOfStrings:
         s = SequenceMatcher(lambda x: x == " ", currentTextFoundInUrl, previousListOfStrings)
         percentageSimilar = s.ratio()
-        if percentageSimilar > .75:
+        if percentageSimilar > .6:
             return True
         else:
             previousListOfStrings = currentTextFoundInUrl
