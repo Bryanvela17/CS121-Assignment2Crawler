@@ -51,6 +51,8 @@ def extract_next_links(url, resp):
     listOfLinks = []  # This is where the list of hyperlinks will go
     parsedText = []  # Empty string needed for adding all the words in each url
     
+    #write into results file 
+
     if not decideWhetherToExtractInfo(resp, url):
         return []
     
@@ -59,6 +61,7 @@ def extract_next_links(url, resp):
     if checkForTrapsAndSimilarity(allText):                # If bool value of resultOfTrap is true, then return and exit function
         print(f'****************___Avoided Trap From URL____******************')
         print(f'***************___Check Url Above Confirm____******************')
+        
         return []
     
     parsedText = checkForContent(allText)
@@ -71,6 +74,8 @@ def extract_next_links(url, resp):
     listOfLinks = convertToAbsolute(url, listOfLinks)       # Converts all urls to absolute
     checkForRedirection(listOfLinks, url, resp)
     print(f'-->->->-->->-->->---> This URL --->: {url} has this many words ---> {counter} <---')
+
+
     #for token, freq in count_Words.items():
     #    print(f"{token} -> {freq}")
     return listOfLinks
@@ -136,10 +141,13 @@ def decideWhetherToExtractInfo(resp, url) -> bool:
     return True
 
 def checkForRedirection(listOfLinks, url, resp):    # Status Code Definition website says to handle up to 5 redirections, TBD? 
+    f = open("results.txt", "w+")
+
     if resp.status >= 300 and resp.status < 400:
         addThislink = resp.raw_response.headers.get("Location") # https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html 
         if addThislink != None and addThislink not in listOfLinks:
-            print(f'\t\tNew link redirected to --->: {str(addThislink)}')
+            #print(f'\t\tNew link redirected to --->: {str(addThislink)}')
+            f.write(f'\t\tNew link redirected to --->: {str(addThislink)}')
             listOfLinks.append(addThislink)
 
 
@@ -266,23 +274,28 @@ def getSubDomains(words_In_Page):
 
 
 def printCrawlerSummary():
-    print(f'\t\t\t\t\tCrawler Report\t\t\t\t\t')
+    f = open("results.txt", "w+")
 
+    #print(f'\t\t\t\t\tCrawler Report\t\t\t\t\t')
+    f.write(f'\t\t\t\t\tCrawler Report\t\t\t\t\t')
     #totalNumOfUniquePages = count_unique_pages(words_In_Page)
-    print(f'\t\t\tTotal Number of Unique Pages: {len(uniqueCounter)}')
-        
+    #print(f'\t\t\tTotal Number of Unique Pages: {len(uniqueCounter)}')
+    f.write(f'\t\t\tTotal Number of Unique Pages: {len(uniqueCounter)}')
+
     longestNumOfWords = longest_page_words(words_In_Page)
     nameOfUrlWithLongestNumOfWords = longest_page(longestNumOfWords, words_In_Page)
-    print(f'\t\t\tThis url: {nameOfUrlWithLongestNumOfWords} has the most words with: {longestNumOfWords} words')
+    #print(f'\t\t\tThis url: {nameOfUrlWithLongestNumOfWords} has the most words with: {longestNumOfWords} words')
+    f.write(f'\t\t\tThis url: {nameOfUrlWithLongestNumOfWords} has the most words with: {longestNumOfWords} words')
 
     topFiftyMostCommonWords = most_common_words(count_Words)
     for word, count in topFiftyMostCommonWords.items():
-        print(f'\t\t\t{word} -> {count}')
+        #print(f'\t\t\t{word} -> {count}')
+        f.write(f'\t\t\t{word} -> {count}')
 
     subDomainsOfICS = getSubDomains(words_In_Page)
     output_lines = [f"\t\t\t{url}, {count}" for url, count in subDomainsOfICS]
-    print('\n'.join(output_lines))
-
+    #print('\n'.join(output_lines))
+    f.write('\n'.join(output_lines))
 
 def check_URLSize(url, resp, mbSize = (30 * 1024 * 1024)):
     #page is too large
