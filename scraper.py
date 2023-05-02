@@ -30,8 +30,6 @@ add_These_Words = {"a", "about", "above", "after", "again", "against", "all", "a
                    "yours", "yourself", "yourselves"}
 stop_Words = stop_Words.union(add_These_Words)
 
-
-
 def scraper(url, resp):
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
@@ -47,35 +45,27 @@ def extract_next_links(url, resp):
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
-    
+    url = urljoin(resp.url,url)     # Convert rel to abs
     listOfLinks = []  # This is where the list of hyperlinks will go
     parsedText = []  # Empty string needed for adding all the words in each url
     
-    #write into results file 
-
     if not decideWhetherToExtractInfo(resp, url):
         return []
     
     soup = BeautifulSoup(resp.raw_response.content, 'lxml')  # Creating a soup object to begin breaking down
     allText = soup.get_text()
+    parsedText = checkForContent(allText)
     if checkForTrapsAndSimilarity(allText):                # If bool value of resultOfTrap is true, then return and exit function
         print(f'****************___Avoided Trap From URL____******************')
         print(f'***************___Check Url Above Confirm____******************')
-        
         return []
-    
-    parsedText = checkForContent(allText)
     counter = 0
     #print(f'\t\tURL Text ---> : {parsedText}\t\t')  # Prints all valid text which can later be used to tuple url with wordset https://www.crummy.com/software/BeautifulSoup/bs4/doc/#get-text
-
     counter = all_Count(parsedText, counter)            # Gets the number of words per page, and starts tallying all total words
     words_In_Page[counter] = url                            # Assigns and maps the number of words per page to each specific url
-    listOfLinks = getAllUrls(listOfLinks, soup)                   # Gets all links within a url (recurrsive/inception like behavior)
-    listOfLinks = convertToAbsolute(url, listOfLinks)       # Converts all urls to absolute
-    checkForRedirection(listOfLinks, url, resp)
-    print(f'-->->->-->->-->->---> This URL --->: {url} has this many words ---> {counter} <---')
-
-
+    listOfLinks = getAllUrls(soup)                   # Gets all links within a url (recurrsive/inception like behavior)
+    #checkForRedirection(listOfLinks, url, resp)
+    print(f'-->->->-->->-->->---> This URL --->: {url} has this many words ---> {counter} <-')
     #for token, freq in count_Words.items():
     #    print(f"{token} -> {freq}")
     return listOfLinks
@@ -128,27 +118,17 @@ def decideWhetherToExtractInfo(resp, url) -> bool:
     if resp.raw_response is None:   # If response is empty return
         return False
 
-    if not check_URLSize(url, resp, mbSize = (30 * 1024 * 1024)):
+    checkForType = resp.raw_response.headers.get("Content-Type", "")
+    if not re.match(r"text/.*", checkForType) or not "utf-8" in checkForType.lower():   # If header does not specify test or utf-8 skip
+        return False
+
+    if not check_URLSize(url, resp, mbSize = (35 * 1024 * 1024)):       # If page is bigger than 30MB Skip
         return False
 
     if not checkRobotFile(url):      # If we aren't allowed to crawl return
         return False 
     
-    checkForType = resp.raw_response.headers.get("Content-Type", "")
-    if not re.match(r"text/.*", checkForType) or not "utf-8" in checkForType.lower():
-        return False
-
     return True
-
-def checkForRedirection(listOfLinks, url, resp):    # Status Code Definition website says to handle up to 5 redirections, TBD? 
-    f = open("results.txt", "w+")
-
-    if resp.status >= 300 and resp.status < 400:
-        addThislink = resp.raw_response.headers.get("Location") # https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html 
-        if addThislink != None and addThislink not in listOfLinks:
-            #print(f'\t\tNew link redirected to --->: {str(addThislink)}')
-            f.write(f'\t\tNew link redirected to --->: {str(addThislink)}')
-            listOfLinks.append(addThislink)
 
 
 def checkForContent(allText) -> list[str]:
@@ -157,21 +137,43 @@ def checkForContent(allText) -> list[str]:
 
 
 def all_Count(parsedText, counter) -> int:
-    for word in parsedText:
-        word = word.lower()
-        sieveTheseWords = re.findall(ALPHANUMERICAL_WORDS, word)
-        for word in sieveTheseWords:
-            if len(word) >= 2:
-                if word not in stop_Words:
-                    count_Words[word] += 1
-                    counter += 1
+    for word in parsedText:             # For every word in the url that we find
+        word = word.lower()             # make it lower case for consistency
+        sieveTheseWords = re.findall(ALPHANUMERICAL_WORDS, word)    # Sieve these words through the regex
+        for w in sieveTheseWords:
+            if len(w) >= 2:               # if it isn't just one letter
+                if w not in stop_Words:  # If it isn't a word in the stop woirds
+                    count_Words[w] += 1  # incriment the amount of times we've seen this word
+                    counter += 1            # Return for counter of words in this url
     return counter
     
+runningTotal = 0
+def getAllUrls(soup) -> list:
+    noDuplicateLinks = set()        # Create a set to get rid of duplicate urls
+    global runningTotal
+    for item in soup.findAll('a'):  # Use soup to iterate over a given url 
+        item = item.get('href')     # Get the url (item)
+        if item:                    # If there exists a url
+            fragment = urlparse(item).fragment  # If there exists a frag
+            if fragment:
+                item = item.split("#")[0]   # Remove frag
+            global uniqueCounter
+            if item not in uniqueCounter:   # If url was not seen before, add to uniqueUrlCounter
+                uniqueCounter.append(item)
+                runningTotal += 1
+                print(f"-->->->-->->-->->--->Found {runningTotal} unique URLs")
+            noDuplicateLinks.add(item)      
+    return list(noDuplicateLinks)   # Return list of links from set
 
-def getAllUrls(listOfLinks, soup) -> list:
-    for everyLink in soup.findAll('a'):              # Extract all the urls found within a page using 'a' tag
-        listOfLinks.append(everyLink.get('href'))   # Uses the href tag to get the urls 
-    return listOfLinks
+
+def checkRobotFile(url) -> bool:
+    rp = RobotFileParser()                  # Creates a robotFileParser object
+    rp.set_url(urljoin(url, "/robots.txt")) # Creates a temporary url with the /robots.txt appened to the end
+    try:
+        rp.read()                           # Read the file
+    except Exception:                       # If no robots.txt file, go ahead and crawl anyway
+        return True                     
+    return rp.can_fetch("*", url)           # If we are allowed to crawl return true, else false
 
 
 def convertToAbsolute(url, urlList) -> list[str]:
@@ -188,21 +190,10 @@ def convertToAbsolute(url, urlList) -> list[str]:
     completeUrls = [urldefrag(u).url for u in completeUrls]
     completeUrls = list(set(completeUrls))
     #print(completeUrls)
-    global uniqueCounter
-    if url not in uniqueCounter:
-        uniqueCounter.append(url)
+    #global uniqueCounter
+    #if url not in uniqueCounter:
+    #    uniqueCounter.append(url)
     return completeUrls
-
-
-def checkRobotFile(url) -> bool:
-    rp = RobotFileParser()                  # Creates a robotFileParser object
-    rp.set_url(urljoin(url, "/robots.txt")) # Creates a temporary url with the /robots.txt appened to the end
-    try:
-        rp.read()                           # Read the file
-    except Exception:                       # If no robots.txt file, go ahead and crawl anyway
-        return True                     
-    return rp.can_fetch("*", url)           # If we are allowed to crawl return true, else false
-
 
 '''
 /*********************************************************************************************
@@ -220,7 +211,7 @@ def checkForTrapsAndSimilarity(currentTextFoundInUrl) -> bool:
     if previousListOfStrings:
         s = SequenceMatcher(lambda x: x == " ", currentTextFoundInUrl, previousListOfStrings)
         percentageSimilar = s.ratio()
-        if percentageSimilar > .6:
+        if percentageSimilar >= .6: # Changed to 0.6 for Deployment Run # 1 
             return True
         else:
             previousListOfStrings = currentTextFoundInUrl
@@ -228,7 +219,6 @@ def checkForTrapsAndSimilarity(currentTextFoundInUrl) -> bool:
     else:
         previousListOfStrings = currentTextFoundInUrl
         return False
-
 
 def count_unique_pages(words_In_Page) -> int:
     uni_Links = set()
@@ -270,32 +260,7 @@ def getSubDomains(words_In_Page):
     sorted_subdomains = sorted(subdomain_counts.items(), key=lambda x: (x[0].lower(), x[1]), reverse=False)
     
     # Return a list of tuples with the URL and count for each subdomain
-    return [(f'http://{subdomain}.ics.uci.edu', len(subdomain_pages[subdomain])) for subdomain, _ in sorted_subdomains]
-
-
-def printCrawlerSummary():
-    f = open("results.txt", "w+")
-
-    #print(f'\t\t\t\t\tCrawler Report\t\t\t\t\t')
-    f.write(f'\t\t\t\t\tCrawler Report\t\t\t\t\t')
-    #totalNumOfUniquePages = count_unique_pages(words_In_Page)
-    #print(f'\t\t\tTotal Number of Unique Pages: {len(uniqueCounter)}')
-    f.write(f'\t\t\tTotal Number of Unique Pages: {len(uniqueCounter)}')
-
-    longestNumOfWords = longest_page_words(words_In_Page)
-    nameOfUrlWithLongestNumOfWords = longest_page(longestNumOfWords, words_In_Page)
-    #print(f'\t\t\tThis url: {nameOfUrlWithLongestNumOfWords} has the most words with: {longestNumOfWords} words')
-    f.write(f'\t\t\tThis url: {nameOfUrlWithLongestNumOfWords} has the most words with: {longestNumOfWords} words')
-
-    topFiftyMostCommonWords = most_common_words(count_Words)
-    for word, count in topFiftyMostCommonWords.items():
-        #print(f'\t\t\t{word} -> {count}')
-        f.write(f'\t\t\t{word} -> {count}')
-
-    subDomainsOfICS = getSubDomains(words_In_Page)
-    output_lines = [f"\t\t\t{url}, {count}" for url, count in subDomainsOfICS]
-    #print('\n'.join(output_lines))
-    f.write('\n'.join(output_lines))
+    return [(f'https://{subdomain}.ics.uci.edu', len(subdomain_pages[subdomain])) for subdomain, _ in sorted_subdomains]
 
 def check_URLSize(url, resp, mbSize = (30 * 1024 * 1024)):
     #page is too large
@@ -305,3 +270,23 @@ def check_URLSize(url, resp, mbSize = (30 * 1024 * 1024)):
 
     #page can be crawled
     return True
+
+
+def printCrawlerSummary():
+    f = open('results.txt', 'w')
+    f.write(f'\t\t\t\t\tCrawler Report\t\t\t\t\t\n')
+    f.write("Members ID Numbers: 87866641, 18475327, 92844565, 86829976\n\n")
+    #totalNumOfUniquePages = count_unique_pages(words_In_Page)
+    f.write(f'\t\t\tTotal Number of Unique Pages: {len(uniqueCounter)}\n\n')
+    longestNumOfWords = longest_page_words(words_In_Page)
+    nameOfUrlWithLongestNumOfWords = longest_page(longestNumOfWords, words_In_Page)
+    f.write(f'\t\t\tThis url: {nameOfUrlWithLongestNumOfWords} has the most words with: {longestNumOfWords} words\n\n')
+    topFiftyMostCommonWords = most_common_words(count_Words)
+    for word, count in topFiftyMostCommonWords.items():
+        f.write(f'\t\t\t{word} -> {count}\n')
+    f.write('\n')
+    subDomainsOfICS = getSubDomains(words_In_Page)
+    output_lines = [f"\t\t\t{url}, {count}" for url, count in subDomainsOfICS]
+    f.write('\n'.join(output_lines))
+    f.write(f'\t\t\t\t\tEnd Crawler Report\t\t\t\t\t\n')
+    f.close()
