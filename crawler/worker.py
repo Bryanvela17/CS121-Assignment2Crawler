@@ -21,7 +21,7 @@ class Worker(Thread):
         super().__init__(daemon=True)
 
     def run(self):
-
+        tbd_urlManualCount = []
         while True:
             tbd_url = self.frontier.get_tbd_url()
             if not tbd_url:
@@ -33,6 +33,9 @@ class Worker(Thread):
                 f"Downloaded {tbd_url}, status <{resp.status}>, "
                 f"using cache {self.config.cache_server}.")
             scraped_urls = scraper.scraper(tbd_url, resp)
+            if tbd_url not in tbd_urlManualCount: # check if link has been seen already
+                tbd_urlManualCount.append(tbd_url)
+            print(f'-->->->-->->-->->--->tbd_urlManualCount: {len(tbd_urlManualCount)}')
             #printCrawlerSummary()
             for scraped_url in scraped_urls:
                 self.frontier.add_url(scraped_url)
@@ -40,3 +43,4 @@ class Worker(Thread):
             time.sleep(self.config.time_delay)
         
         printCrawlerSummary()
+        print(f'-->->->-->->-->->--->tbd_urlManualCount: {len(tbd_urlManualCount)}')

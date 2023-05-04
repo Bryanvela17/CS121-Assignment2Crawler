@@ -13,6 +13,7 @@ count_Words = defaultdict(int)
 words_In_Page = {}
 uniqueCounter = []
 previousListOfStrings = []
+totalPageCounter = 0
 # Extra stop words that aren't in the download
 add_These_Words = {"a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are",
                    "aren't", "as", "at", "be", "because", "been", "before", "being", "below", "between", "both", "but",
@@ -80,6 +81,7 @@ def is_valid(url):
     # Decide whether to crawl this url or not.
     # If you decide to crawl it, return True; otherwise return False.
     # There are already some conditions that return False.
+    global totalPageCounter
     try:
         bad_url_found = False
         parsed = urlparse(url)
@@ -96,6 +98,16 @@ def is_valid(url):
                 break
         if bad_url_found:
             return False
+        if not re.match(
+            r".*\.(css|js|bmp|gif|jpe?g|jpeg|jpg|ico"
+            + r"|png|tiff?|mid|mp2|mp3|mp4"
+            + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
+            + r"|ps|eps|tex|ppt|pptx|ppsx|doc|docx|xls|xlsx|names"
+            + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
+            + r"|epub|dll|cnf|tgz|sha1"
+            + r"|thmx|mso|arff|rtf|jar|csv"
+            + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower()):
+            totalPageCounter += 1
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|jpeg|jpg|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
@@ -122,7 +134,7 @@ def decideWhetherToExtractInfo(resp, url) -> bool:
     if not re.match(r"text/.*", checkForType) or not "utf-8" in checkForType.lower():   # If header does not specify test or utf-8 skip
         return False
 
-    if not check_URLSize(url, resp, mbSize = (35 * 1024 * 1024)):       # If page is bigger than 30MB Skip
+    if not check_URLSize(url, resp, minSize = 500, mbSize = (35 * 1024 * 1024)):       # If page is bigger than 30MB Skip
         return False
 
     if not checkRobotFile(url):      # If we aren't allowed to crawl return
@@ -161,7 +173,7 @@ def getAllUrls(soup) -> list:
             if item not in uniqueCounter:   # If url was not seen before, add to uniqueUrlCounter
                 uniqueCounter.append(item)
                 runningTotal += 1
-                print(f"-->->->-->->-->->--->Found {runningTotal} unique URLs")
+                #print(f"-->->->-->->-->->--->Found {runningTotal} unique URLs")
             noDuplicateLinks.add(item)      
     return list(noDuplicateLinks)   # Return list of links from set
 
@@ -211,7 +223,7 @@ def checkForTrapsAndSimilarity(currentTextFoundInUrl) -> bool:
     if previousListOfStrings:
         s = SequenceMatcher(lambda x: x == " ", currentTextFoundInUrl, previousListOfStrings)
         percentageSimilar = s.ratio()
-        if percentageSimilar >= .6: # Changed to 0.6 for Deployment Run # 1 
+        if percentageSimilar >= .90: # Changed to 0.9 for Deployment Run # 2
             return True
         else:
             previousListOfStrings = currentTextFoundInUrl
@@ -262,7 +274,10 @@ def getSubDomains(words_In_Page):
     # Return a list of tuples with the URL and count for each subdomain
     return [(f'https://{subdomain}.ics.uci.edu', len(subdomain_pages[subdomain])) for subdomain, _ in sorted_subdomains]
 
-def check_URLSize(url, resp, mbSize = (30 * 1024 * 1024)):
+def check_URLSize(url, resp, minSize = 500, mbSize = (35 * 1024 * 1024)):
+    if len(resp.raw_response.content) < minSize:
+        print(f'Skipping {url}: page size of: {len(resp.raw_response.content)} bytes is too small!')
+        return False
     #page is too large
     if len(resp.raw_response.content) > mbSize:
         print(f'Skipping {url}: page size of: {len(resp.raw_response.content)} bytes is too large!')
@@ -273,20 +288,20 @@ def check_URLSize(url, resp, mbSize = (30 * 1024 * 1024)):
 
 
 def printCrawlerSummary():
-    f = open('results.txt', 'w')
-    f.write(f'\t\t\t\t\tCrawler Report\t\t\t\t\t\n')
-    f.write("Members ID Numbers: 87866641, 18475327, 92844565, 86829976\n\n")
-    #totalNumOfUniquePages = count_unique_pages(words_In_Page)
-    f.write(f'\t\t\tTotal Number of Unique Pages: {len(uniqueCounter)}\n\n')
+    file = open('results.txt', 'w')
+    file.write(f'\t\t\t\t\tCrawler Report\t\t\t\t\t\n')
+    file.write("Members ID Numbers: 87866641, 18475327, 92844565, 86829976\n\n")
+    file.write(f'\t\t\tTotal Number of Unique Pages: {totalPageCounter} with new counter\n\n')
+    file.write(f'\t\t\tTotal Number of Unique Pages: {len(uniqueCounter)} No change\n\n')
     longestNumOfWords = longest_page_words(words_In_Page)
     nameOfUrlWithLongestNumOfWords = longest_page(longestNumOfWords, words_In_Page)
-    f.write(f'\t\t\tThis url: {nameOfUrlWithLongestNumOfWords} has the most words with: {longestNumOfWords} words\n\n')
+    file.write(f'\t\t\tThis url: {nameOfUrlWithLongestNumOfWords} has the most words with: {longestNumOfWords} words\n\n')
     topFiftyMostCommonWords = most_common_words(count_Words)
     for word, count in topFiftyMostCommonWords.items():
-        f.write(f'\t\t\t{word} -> {count}\n')
-    f.write('\n')
+        file.write(f'\t\t\t{word} -> {count}\n')
+    file.write('\n')
     subDomainsOfICS = getSubDomains(words_In_Page)
     output_lines = [f"\t\t\t{url}, {count}" for url, count in subDomainsOfICS]
-    f.write('\n'.join(output_lines))
-    f.write(f'\t\t\t\t\tEnd Crawler Report\t\t\t\t\t\n')
-    f.close()
+    file.write('\n'.join(output_lines))
+    file.write(f'\t\t\t\t\tEnd Crawler Report\t\t\t\t\t\n')
+    file.close()
