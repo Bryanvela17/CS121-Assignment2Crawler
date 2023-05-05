@@ -332,7 +332,7 @@ def printCrawlerSummary():
     file = open('results.txt', 'w')
     file.write(f'\t\t\t\t\tCrawler Report\t\t\t\t\t\n')
     file.write("Members ID Numbers: 87866641, 18475327, 92844565, 86829976\n\n")
-    file.write(f'\t\t\tTotal Number of Unique Pages: {totalPageCounter} with new counter\n\n')
+    #file.write(f'\t\t\tTotal Number of Unique Pages: {totalPageCounter} with new counter\n\n')
     file.write(f'\t\t\tTotal Number of Unique Pages: {len(uniqueCounter)} No change\n\n')
     longestNumOfWords = longest_page_words(words_In_Page)
     nameOfUrlWithLongestNumOfWords = longest_page(longestNumOfWords, words_In_Page)
