@@ -35,8 +35,6 @@ class Worker(Thread):
             scraped_urls = scraper.scraper(tbd_url, resp)
             if tbd_url not in tbd_urlManualCount: # check if link has been seen already
                 tbd_urlManualCount.append(tbd_url)
-            print(f'-->->->-->->-->->--->tbd_urlManualCount: {len(tbd_urlManualCount)}')
-            #printCrawlerSummary()
             for scraped_url in scraped_urls:
                 self.frontier.add_url(scraped_url)
             self.frontier.mark_url_complete(tbd_url)
